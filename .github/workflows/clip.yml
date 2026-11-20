@@ -1,0 +1,50 @@
+name: GTA6 Clipper
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Stream / VOD link (Twitch VOD ya YouTube)"
+        required: true
+      clips:
+        description: "Kitne clips"
+        default: "5"
+      clip_seconds:
+        description: "Har clip kitne second ka"
+        default: "30"
+      max_minutes:
+        description: "Stream ke pehle kitne minute dekhne hain"
+        default: "120"
+
+jobs:
+  clip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu
+          pip install -U yt-dlp faster-whisper numpy
+
+      - name: Make clips
+        env:
+          URL: ${{ inputs.url }}
+          CLIPS: ${{ inputs.clips }}
+          SECS: ${{ inputs.clip_seconds }}
+          MAXMIN: ${{ inputs.max_minutes }}
+        run: python clipper.py "$URL" "$CLIPS" "$SECS" "$MAXMIN"
+
+      - name: Save shorts
+        uses: actions/upload-artifact@v4
+        with:
+          name: shorts
+          path: |
+            out/*.mp4
+            out/*.txt
